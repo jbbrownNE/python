@@ -1,0 +1,26 @@
+from pyVim.connect import SmartConnectNoSSL, Disconnect
+from pyVmomi import vim
+import atexit
+
+# ESXi Host Details
+host = 'your_esxi_host_ip'
+user = 'your_username'
+password = 'your_password'
+
+# Connect to the host without SSL certificate verification
+si = SmartConnectNoSSL(host=host, user=user, pwd=password)
+atexit.register(Disconnect, si)
+
+content = si.RetrieveContent()
+
+# Example: List all the hosts
+for datacenter in content.rootFolder.childEntity:
+    if hasattr(datacenter, 'hostFolder'):
+        hostFolder = datacenter.hostFolder
+        computeResourceList = hostFolder.childEntity
+        for computeResource in computeResourceList:
+            hostList = computeResource.host
+            for host in hostList:
+                print("Host:", host.summary.config.name)
+
+# Add your logic here to get specific interface performance data
