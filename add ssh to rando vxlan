@@ -1,0 +1,37 @@
+from netmiko import ConnectHandler
+
+# List of router IP addresses
+routers = ['192.168.1.1', '192.168.1.2', '192.168.1.3']  # Replace with your routers' IP addresses
+
+# Common credentials
+username = 'username'
+password = 'password'
+
+# ACL configuration to allow SSH (TCP port 22)
+# You might need to adjust these commands based on your specific router model and configuration
+acl_config_commands = [
+    'set firewall family inet filter SSH_ONLY term allow-ssh from protocol tcp',
+    'set firewall family inet filter SSH_ONLY term allow-ssh from port 22',
+    'set firewall family inet filter SSH_ONLY term allow-ssh then accept',
+    'set firewall family inet filter SSH_ONLY term deny-all then reject',  # Deny all other traffic
+    # You may need to apply this filter to specific interfaces
+    # Example: 'set interfaces ge-0/0/1 unit 0 family inet filter input SSH_ONLY'
+]
+
+# Connect to each router and configure the ACL
+for ip in routers:
+    router = {
+        'device_type': 'juniper',
+        'ip': ip,
+        'username': username,
+        'password': password,
+    }
+
+    print(f"Connecting to {ip}...")
+    with ConnectHandler(**router) as net_connect:
+        # Send VXLAN and ACL configuration commands
+        output = net_connect.send_config_set(acl_config_commands)
+        print(output)
+        print(f"ACL configuration applied on {ip}")
+
+print("ACL configuration completed on all routers.")
