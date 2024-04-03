@@ -1,0 +1,41 @@
+#!/usr/bin/python3
+
+import datetime as dt
+import random
+import sys
+
+# Function to generate a matrix with random integers
+def generate_matrix(rows, cols):
+    return [[random.randint(100, 1000) for _ in range(cols)] for _ in range(rows)]
+
+# Function to multiply two matrices
+def multiply_matrices(mat1, mat2):
+    result = [[0 for _ in range(len(mat2[0]))] for _ in range(len(mat1))]
+    for i in range(len(mat1)):
+        for j in range(len(mat2[0])):
+            for k in range(len(mat2)):
+                result[i][j] += mat1[i][k] * mat2[k][j]
+    return result
+
+startTime = dt.datetime.now();
+#print("Started processing at {}\n".format(startTime))
+#sys.stdout.flush()
+
+# Generate two 1000x1000 matrices with random integers
+matrix1 = generate_matrix(1000, 1000)
+matrix2 = generate_matrix(1000, 1000)
+
+# Multiply the matrices
+result = multiply_matrices(matrix1, matrix2)
+
+# Print the result
+#for row in result:
+#    print(row)
+
+endTime = dt.datetime.now();
+#print("Stopped processing at {}\n".format(endTime))
+#sys.stdout.flush()
+
+f = open("/var/log/cpu-performance.log", 'a')
+f.write("{} : Time taken to complete the processing : {}\n".format(endTime, endTime - startTime))
+f.close()
