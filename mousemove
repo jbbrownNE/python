@@ -1,0 +1,20 @@
+import pyautogui
+import time
+
+# Function to move the mouse cursor slightly to prevent sleep
+def move_mouse():
+    # Move the mouse by a small amount
+    pyautogui.moveRel(1, 1)
+    pyautogui.moveRel(-1, -1)
+
+# Main loop to continuously move the mouse every few minutes
+while True:
+    try:
+        # Move the mouse
+        move_mouse()
+        # Wait for 5 minutes before moving the mouse again
+        time.sleep(300)  # 300 seconds = 5 minutes
+    except KeyboardInterrupt:
+        # Stop the script when Ctrl+C is pressed
+        print("\nScript stopped by user.")
+        break
