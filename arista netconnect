@@ -1,0 +1,22 @@
+from netmiko import ConnectHandler
+
+# Arista switch details
+switch_ip = '192.168.1.1'  # Replace with your switch's IP address
+username = 'your_username'
+password = 'your_password'
+
+# Define the device
+device = {
+    'device_type': 'arista_eos',
+    'ip': switch_ip,
+    'username': username,
+    'password': password,
+}
+
+# Connect to the switch
+with ConnectHandler(**device) as net_connect:
+    # Execute the command to show interface statistics
+    output = net_connect.send_command('show interfaces')
+    print(output)
+
+# Add any additional processing of the output here if needed
