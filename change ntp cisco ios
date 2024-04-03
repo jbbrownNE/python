@@ -1,0 +1,28 @@
+from netmiko import ConnectHandler
+
+# Router details
+router_ip = '192.168.1.1'  # Replace with your router's IP address
+username = 'your_username'
+password = 'your_password'
+
+# NTP server details
+new_ntp_servers = ['192.168.2.1', '192.168.2.2']  # Replace with your NTP server IP addresses
+
+# Define the device
+device = {
+    'device_type': 'cisco_ios',
+    'ip': router_ip,
+    'username': username,
+    'password': password,
+}
+
+# Commands to configure NTP
+commands = ['no ntp server']  # This command removes existing NTP configurations
+commands.extend([f'ntp server {server}' for server in new_ntp_servers])
+
+# Connect to the router and configure NTP
+with ConnectHandler(**device) as net_connect:
+    output = net_connect.send_config_set(commands)
+    print(output)
+
+print("NTP configuration has been updated.")
