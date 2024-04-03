@@ -1,0 +1,36 @@
+import random
+from netmiko import ConnectHandler
+
+# List of Arista switch IP addresses
+switches = ['192.168.1.1', '192.168.1.2', '192.168.1.3']  # Replace with your switches' IP addresses
+
+# Common credentials
+username = 'username'
+password = 'password'
+
+# VXLAN configuration
+vxlan_id = random.randint(1000, 9999)
+vxlan_config_commands = [
+    'interface Vxlan1',
+    f'vxlan source-interface Loopback1',  # Replace with your actual source interface
+    f'vxlan vlan {vxlan_id} vni {vxlan_id}',
+    f'vxlan flood vtep',  # Add VTEP IP addresses here
+    # Add any additional configuration commands here
+]
+
+# Connect to each switch and configure VXLAN
+for ip in switches:
+    switch = {
+        'device_type': 'arista_eos',
+        'ip': ip,
+        'username': username,
+        'password': password,
+    }
+
+    print(f"Connecting to {ip}...")
+    with ConnectHandler(**switch) as net_connect:
+        output = net_connect.send_config_set(vxlan_config_commands)
+        print(output)
+        print(f"VXLAN configuration applied on {ip}")
+
+print("VXLAN configuration completed on all switches.")
