@@ -1,0 +1,23 @@
+from netmiko import ConnectHandler
+
+# Define the device to connect to
+device = {
+    'device_type': 'cisco_ios',  # Change this according to your device type
+    'ip': '192.168.1.1',         # Device IP address
+    'username': 'yourusername',
+    'password': 'yourpassword',
+}
+
+# Define BGP configuration commands
+bgp_commands = [
+    'router bgp 65001',                  # Replace with your BGP AS number
+    'neighbor 192.168.1.2 remote-as 65002',  # Replace with neighbor details
+    'network 10.0.0.0 mask 255.255.255.0',   # Advertise a network
+    # Add other BGP commands as necessary
+]
+
+# Connect to the device and configure BGP
+with ConnectHandler(**device) as net_connect:
+    output = net_connect.send_config_set(bgp_commands)
+
+print(output)
