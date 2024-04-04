@@ -1,0 +1,22 @@
+from netmiko import ConnectHandler
+
+# Define your device parameters
+device = {
+    'device_type': 'cisco_ios',  # Device type for Cisco IOS
+    'host': 'your_device_ip',    # IP address of the Cisco device
+    'username': 'your_username', # SSH username
+    'password': 'your_password', # SSH password
+    # If using SSH keys for authentication, you can use the 'use_keys' and 'key_file' arguments
+}
+
+# Create a connection handler
+with ConnectHandler(**device) as net_connect:
+    # Send the command to retrieve the running configuration
+    output = net_connect.send_command("show running-config")
+
+# Print or process the configuration data
+print(output)
+
+# Optionally, write the configuration to a file
+with open("running-config.txt", "w") as file:
+    file.write(output)
