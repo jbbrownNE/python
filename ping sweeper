@@ -1,0 +1,60 @@
+import os
+import subprocess
+import time
+from datetime import datetime
+import schedule
+
+# Define the subnet to ping
+subnet = "192.168.1."  # Replace with the actual subnet
+
+# Function to ping the subnet
+def ping_subnet():
+    current_hosts = set()
+    for i in range(1, 255):  # Iterates over the possible host addresses
+        ip = f"{subnet}{i}"
+        response = subprocess.run(["ping", "-c", "1", ip], stdout=subprocess.DEVNULL)
+        if response.returncode == 0:
+            current_hosts.add(ip)
+
+    return current_hosts
+
+# Function to read the previous log
+def read_log():
+    try:
+        with open('ping_log.txt', 'r') as file:
+            logged_hosts = set(line.strip() for line in file)
+        return logged_hosts
+    except FileNotFoundError:
+        return set()
+
+# Function to write to the log
+def write_log(hosts):
+    with open('ping_log.txt', 'w') as file:
+        for host in hosts:
+            file.write(host + '\n')
+
+# Function to check for new devices and alert
+def check_and_alert(new_hosts, old_hosts):
+    new_devices = new_hosts - old_hosts
+    if new_devices:
+        print(f"ALERT: New devices found at {datetime.now()}: {', '.join(new_devices)}")
+    else:
+        print(f"No new devices found at {datetime.now()}.")
+
+# Function to run the entire process
+def run_process():
+    old_hosts = read_log()
+    new_hosts = ping_subnet()
+    write_log(new_hosts)
+    check_and_alert(new_hosts, old_hosts)
+
+# Schedule the process to run every 30 minutes
+schedule.every(30).minutes.do(run_process)
+
+# Run the first process immediately
+run_process()
+
+# Loop to keep the scheduler running
+while True:
+    schedule.run_pending()
+    time.sleep(1)
