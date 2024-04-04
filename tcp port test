@@ -1,0 +1,54 @@
+import socket
+import subprocess
+import time
+from datetime import datetime
+import schedule
+
+subnet = "192.168.1."  # Replace with your subnet
+
+def ping_subnet():
+    # [existing ping_subnet code]
+
+def read_log():
+    # [existing read_log code]
+
+def write_log(hosts):
+    # [existing write_log code]
+
+def check_tcp_ports(ip):
+    open_ports = []
+    for port in range(1, 1025):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)  # Timeout of 1 second for each port
+        result = sock.connect_ex((ip, port))
+        if result == 0:
+            open_ports.append(port)
+        sock.close()
+    return open_ports
+
+def write_port_scan_log(ip, open_ports):
+    with open(f'port_scan_{ip}.txt', 'w') as file:
+        for port in open_ports:
+            file.write(f"Port {port} is open\n")
+
+def check_and_alert(new_hosts, old_hosts):
+    new_devices = new_hosts - old_hosts
+    if new_devices:
+        print(f"ALERT: New devices found at {datetime.now()}: {', '.join(new_devices)}")
+        for new_device in new_devices:
+            open_ports = check_tcp_ports(new_device)
+            if open_ports:
+                print(f"Open ports on {new_device}: {', '.join(map(str, open_ports))}")
+                write_port_scan_log(new_device, open_ports)
+    else:
+        print(f"No new devices found at {datetime.now()}.")
+
+def run_process():
+    # [existing run_process code]
+
+schedule.every(30).minutes.do(run_process)
+run_process()
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
