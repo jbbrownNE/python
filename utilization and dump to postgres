@@ -1,0 +1,57 @@
+import time
+from datetime import datetime
+from pysnmp.hlapi import *
+from schedule import every, run_pending
+import psycopg2
+
+# SNMP Data Collection
+def get_snmp_data():
+    # Assuming '1.3.6.1.2.1.2.2.1.10.1' is the OID for inbound octets
+    # and '1.3.6.1.2.1.2.2.1.16.1' is the OID for outbound octets
+    # These OIDs need to be adjusted based on the actual interface and metrics
+    oids = ['1.3.6.1.2.1.2.2.1.10.1', '1.3.6.1.2.1.2.2.1.16.1']
+    data = {}
+
+    for oid in oids:
+        iterator = getCmd(
+            SnmpEngine(),
+            CommunityData('public'),  # Replace with your community string
+            UdpTransportTarget(('your_device_IP', 161)),
+            ContextData(),
+            ObjectType(ObjectIdentity(oid))
+        )
+
+        errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
+
+        if errorIndication:
+            print(errorIndication)
+            continue
+        elif errorStatus:
+            print('%s at %s' % (errorStatus.prettyPrint(), errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
+            continue
+        else:
+            for varBind in varBinds:
+                # You might want to process the value here
+                data[oid] = varBind[1].prettyPrint()
+
+    data['timestamp'] = datetime.now()
+    data['interface_id'] = 'eth0'  # Replace with your actual interface ID
+    return data
+
+# Database Insertion
+def insert_into_db(data):
+    # Your existing database insertion logic here
+    pass
+
+# Scheduled Job
+def job():
+    data = get_snmp_data()
+    insert_into_db(data)
+
+# Schedule the job every 5 minutes
+every(5).minutes.do(job)
+
+# Run the scheduler
+while True:
+    run_pending()
+    time.sleep(1)
