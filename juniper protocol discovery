@@ -1,0 +1,34 @@
+# use netmiko
+from netmiko import ConnectHandler
+
+# Device configuration for the Juniper router
+device = {
+    'device_type': 'juniper_junos',  # Device type for Juniper devices
+    'host': 'your_router_ip',        # IP address of the Juniper router
+    'username': 'your_username',     # Username for SSH login
+    'password': 'your_password',     # Password for SSH login
+    'secret': 'your_secret',         # Secret, if required to enter privileged mode
+}
+
+def show_enabled_protocols(device):
+    """
+    Connects to a Juniper router and prints the enabled protocols configuration.
+    """
+    with ConnectHandler(**device) as conn:
+        # If required, entering privileged mode
+        # conn.enable()  # Normally not needed for Juniper
+
+        # Sending command to get protocols information
+        output = conn.send_command("show configuration protocols")
+        
+        return output
+
+def main():
+    """
+    Main function to handle network device interaction.
+    """
+    protocols_info = show_enabled_protocols(device)
+    print("Enabled Protocols Configuration:\n", protocols_info)
+
+if __name__ == "__main__":
+    main()
