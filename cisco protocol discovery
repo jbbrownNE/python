@@ -1,0 +1,34 @@
+#install netmiko first
+from netmiko import ConnectHandler
+
+# Device configuration for the Cisco router
+device = {
+    'device_type': 'cisco_ios',  # Device type for Cisco IOS
+    'host': 'your_router_ip',    # IP address of the Cisco router
+    'username': 'your_username', # Username for SSH login
+    'password': 'your_password', # Password for SSH login
+    'secret': 'your_secret',     # Enable password if required
+}
+
+def show_routing_protocols(device):
+    """
+    Connects to a Cisco router and prints the routing protocols configuration.
+    """
+    with ConnectHandler(**device) as conn:
+        # Entering enable mode
+        conn.enable()
+        
+        # Sending command to get routing protocols information
+        output = conn.send_command("show ip protocols")
+        
+        return output
+
+def main():
+    """
+    Main function to handle network device interaction.
+    """
+    routing_info = show_routing_protocols(device)
+    print("Routing Protocols Configuration:\n", routing_info)
+
+if __name__ == "__main__":
+    main()
