@@ -1,0 +1,80 @@
+#install netmiko
+pip install netmiko psycopg2-binary
+#create postgres table entry
+CREATE TABLE bgp_events (
+    id SERIAL PRIMARY KEY,
+    event_type VARCHAR(255),
+    event_description TEXT,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+#peer with BGP and collect events, then post
+import psycopg2
+from netmiko import ConnectHandler
+from datetime import datetime
+
+# Database connection parameters
+db_params = {
+    'database': 'your_database',
+    'user': 'your_username',
+    'password': 'your_password',
+    'host': 'localhost'
+}
+
+# Device configuration for the Cisco router
+device = {
+    'device_type': 'cisco_ios',
+    'host': 'your_router_ip',
+    'username': 'your_username',
+    'password': 'your_password'
+}
+
+def configure_bgp(device):
+    """
+    Configure BGP on a Cisco router.
+    """
+    config_commands = [
+        'router bgp 65001',
+        'neighbor 192.168.1.2 remote-as 65002',
+        'neighbor 192.168.1.2 description Peer1',
+        'end'
+    ]
+    with ConnectHandler(**device) as conn:
+        output = conn.send_config_set(config_commands)
+        return output
+
+def get_bgp_summary(device):
+    """
+    Get BGP summary information to check peering status.
+    """
+    with ConnectHandler(**device) as conn:
+        output = conn.send_command("show ip bgp summary")
+    return output
+
+def log_to_db(event_description, db_params):
+    """
+    Log BGP event to the PostgreSQL database.
+    """
+    conn = psycopg2.connect(**db_params)
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO bgp_events (event_type, event_description) VALUES (%s, %s)",
+        ('BGP Peering Event', event_description)
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def main():
+    """
+    Main function to handle BGP configuration and event logging.
+    """
+    # Configure BGP
+    configure_bgp(device)
+    # Collect BGP peering events
+    event_description = get_bgp_summary(device)
+    # Log events to the database
+    log_to_db(event_description, db_params)
+    print("BGP event logged to database.")
+
+if __name__ == "__main__":
+    main()
