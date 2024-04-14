@@ -1,0 +1,99 @@
+use boto
+import boto3
+
+def create_vpn_connection():
+    client = boto3.client('ec2')
+
+    # Create a virtual private gateway
+    vpg = client.create_vpn_gateway(Type='ipsec.1', AmazonSideAsn=64512)
+    vpg_id = vpg['VpnGateway']['VpnGatewayId']
+
+    # Attach the VPG to your VPC
+    vpc_id = 'your-vpc-id'
+    client.attach_vpn_gateway(VpnGatewayId=vpg_id, VpcId=vpc_id)
+
+    # Create a customer gateway
+    cgw = client.create_customer_gateway(
+        Type='ipsec.1',
+        PublicIp='your-on-prem-router-public-ip',
+        BgpAsn=65000
+    )
+    cgw_id = cgw['CustomerGateway']['CustomerGatewayId']
+
+    # Create the VPN connection
+    vpn_connection = client.create_vpn_connection(
+        Type='ipsec.1',
+        CustomerGatewayId=cgw_id,
+        VpnGatewayId=vpg_id,
+        Options={
+            'StaticRoutesOnly': True
+        }
+    )
+    vpn_connection_id = vpn_connection['VpnConnection']['VpnConnectionId']
+
+    return vpn_connection_id
+
+if __name__ == "__main__":
+    vpn_id = create_vpn_connection()
+    print(f"VPN Connection Created: {vpn_id}")
+
+    #add cisco side
+    from netmiko import ConnectHandler
+
+# Router configuration
+router = {
+    'device_type': 'cisco_ios',  # Device type for Cisco IOS
+    'host': 'your_router_ip',    # IP address of the router
+    'username': 'your_username', # Username for SSH
+    'password': 'your_password', # Password for SSH
+    'secret': 'your_enable_secret', # Enable secret if required
+}
+
+# VPN configuration details
+vpn_config = {
+    'peer_ip': 'aws-cgw-public-ip',
+    'pre_shared_key': 'your-shared-key',
+    'local_subnet': 'your-local-subnet',
+    'local_mask': 'your-local-mask',
+    'remote_subnet': 'aws-vpc-subnet',
+    'remote_mask': 'aws-vpc-mask',
+}
+
+# Configuration commands
+commands = [
+    'crypto isakmp policy 10',
+    'encr aes',
+    'authentication pre-share',
+    'group 2',
+    f"crypto isakmp key {vpn_config['pre_shared_key']} address {vpn_config['peer_ip']}",
+    'crypto ipsec transform-set myset esp-aes esp-sha-hmac',
+    'crypto map mymap 10 ipsec-isakmp',
+    f"set peer {vpn_config['peer_ip']}",
+    'set transform-set myset',
+    f"match address 100",
+    f"access-list 100 permit ip {vpn_config['local_subnet']} {vpn_config['local_mask']} {vpn_config['remote_subnet']} {vpn_config['remote_mask']}",
+    'interface your-interface',
+    'crypto map mymap',
+]
+
+def configure_vpn(router, commands):
+    """
+    Connects to a Cisco router and applies VPN configuration commands.
+    """
+    with ConnectHandler(**router) as conn:
+        # Entering enable mode
+        conn.enable()
+
+        # Sending configuration commands
+        output = conn.send_config_set(commands)
+        return output
+
+def main():
+    """
+    Main function to configure VPN on Cisco router.
+    """
+    result = configure_vpn(router, commands)
+    print("VPN Configuration Result:\n", result)
+
+if __name__ == "__main__":
+    main()
