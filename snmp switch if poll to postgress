@@ -1,0 +1,70 @@
+#postgres
+CREATE TABLE interface_status (
+    id SERIAL PRIMARY KEY,
+    interface_name VARCHAR(255),
+    admin_status VARCHAR(50),
+    operational_status VARCHAR(50),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+#snmp poll to postgres
+import psycopg2
+from netmiko import ConnectHandler
+from datetime import datetime
+
+# Database connection parameters
+db_params = {
+    'database': 'your_database',
+    'user': 'your_username',
+    'password': 'your_password',
+    'host': 'localhost'
+}
+
+# Cisco device configuration
+device = {
+    'device_type': 'cisco_ios',
+    'host': 'your_switch_ip',
+    'username': 'your_username',
+    'password': 'your_password'
+}
+
+def get_interfaces(device):
+    """ Retrieve interface status from the Cisco switch """
+    with ConnectHandler(**device) as conn:
+        output = conn.send_command("show interfaces status")
+    return output
+
+def parse_interfaces(output):
+    """ Parse the raw interface data into a structured format """
+    interfaces = []
+    for line in output.splitlines()[2:]:  # Skip the header lines
+        parts = line.split()
+        if parts:
+            interfaces.append({
+                'interface_name': parts[0],
+                'admin_status': parts[1],
+                'operational_status': parts[2]
+            })
+    return interfaces
+
+def log_to_db(interfaces, db_params):
+    """ Log interface data to the PostgreSQL database """
+    conn = psycopg2.connect(**db_params)
+    cur = conn.cursor()
+    for interface in interfaces:
+        cur.execute(
+            "INSERT INTO interface_status (interface_name, admin_status, operational_status) VALUES (%s, %s, %s)",
+            (interface['interface_name'], interface['admin_status'], interface['operational_status'])
+        )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def main():
+    output = get_interfaces(device)
+    interfaces = parse_interfaces(output)
+    log_to_db(interfaces, db_params)
+    print("Interface data logged to database.")
+
+if __name__ == "__main__":
+    main()
