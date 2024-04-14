@@ -1,0 +1,33 @@
+#netmiko first
+from netmiko import ConnectHandler
+
+# Device configuration for the Arista router
+device = {
+    'device_type': 'arista_eos',  # Device type for Arista devices
+    'host': 'your_router_ip',     # IP address of the Arista router
+    'username': 'your_username',  # Username for SSH login
+    'password': 'your_password',  # Password for SSH login
+}
+
+def show_routing_protocols(device):
+    """
+    Connects to an Arista router and prints the routing protocols configuration.
+    """
+    with ConnectHandler(**device) as conn:
+        # If needed, entering enable mode
+        conn.enable()
+
+        # Sending command to get routing protocols information
+        output = conn.send_command("show ip protocols")
+        
+        return output
+
+def main():
+    """
+    Main function to handle network device interaction.
+    """
+    routing_info = show_routing_protocols(device)
+    print("Routing Protocols Configuration:\n", routing_info)
+
+if __name__ == "__main__":
+    main()
